@@ -7,7 +7,7 @@ use crate::{
         column::{
             array::ArrayColumnData, nullable::NullableColumnData, ArcColumnWrapper, ColumnWrapper,
         },
-        Marshal, SqlType, StatBuffer, Unmarshal, Value, ValueRef, HasSqlType,
+        HasSqlType, Marshal, SqlType, StatBuffer, Unmarshal, Value, ValueRef,
     },
 };
 
@@ -222,7 +222,12 @@ where
         })
     }
 
-    unsafe fn get_internal(&self, pointers: &[*mut *const u8], level: u8, _props: u32) -> Result<()> {
+    unsafe fn get_internal(
+        &self,
+        pointers: &[*mut *const u8],
+        level: u8,
+        _props: u32,
+    ) -> Result<()> {
         assert_eq!(level, 0);
         *pointers[0] = self.data.as_ptr() as *const u8;
         *(pointers[1] as *mut usize) = self.len();

@@ -196,17 +196,13 @@ has_sql_type! {
     DateTime<Tz>: SqlType::DateTime(DateTimeType::DateTime32)
 }
 
-
 impl<K, V> HasSqlType for HashMap<K, V>
 where
     K: HasSqlType,
     V: HasSqlType,
 {
     fn get_sql_type() -> SqlType {
-        SqlType::Map(
-            K::get_sql_type().into(),
-            V::get_sql_type().into(),
-        )
+        SqlType::Map(K::get_sql_type().into(), V::get_sql_type().into())
     }
 }
 

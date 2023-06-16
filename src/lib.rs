@@ -108,7 +108,7 @@
 
 #![recursion_limit = "1024"]
 
-use std::{fmt, future::Future, time::Duration};
+use std::{collections::HashMap, fmt, future::Future, time::Duration};
 
 use futures_util::{
     future, future::BoxFuture, future::FutureExt, stream, stream::BoxStream, StreamExt,
@@ -424,18 +424,40 @@ impl ClientHandle {
         .await
     }
 
-    /// Convenience method to insert block of data.
-    pub async fn insert<Q, B>(&mut self, table: Q, block: B) -> Result<()>
+    pub async fn insert<Q, B>(
+        &mut self,
+        table: Q,
+        block: B,
+    ) -> Result<()>
     where
         Query: From<Q>,
         B: AsRef<Block>,
     {
-        let transport = self.insert_(table, block.as_ref()).await?;
+        self.insert_with_settings(table, block, HashMap::new()).await
+    }
+
+    /// Convenience method to insert block of data.
+    pub async fn insert_with_settings<Q, B>(
+        &mut self,
+        table: Q,
+        block: B,
+        settings: HashMap<String, String>,
+    ) -> Result<()>
+    where
+        Query: From<Q>,
+        B: AsRef<Block>,
+    {
+        let transport = self.insert_with_settings_(table, block.as_ref(), settings).await?;
         self.inner = Some(transport);
         Ok(())
     }
 
-    async fn insert_<Q>(&mut self, table: Q, block: &Block) -> Result<ClickhouseTransport>
+    async fn insert_with_settings_<Q>(
+        &mut self,
+        table: Q,
+        block: &Block,
+        settings: HashMap<String, String>,
+    ) -> Result<ClickhouseTransport>
     where
         Query: From<Q>,
     {
@@ -448,8 +470,25 @@ impl ClientHandle {
         }
         let fields = names.join(", ");
 
-        let query = Query::from(table)
-            .map_sql(|table| format!("INSERT INTO {} ({}) VALUES", table, fields));
+        let settings_string: String = if settings.is_empty() {
+            String::from("")
+        } else {
+            format!(
+                " SETTINGS {}",
+                settings
+                    .iter()
+                    .map(|(key, value)| format!("{} = {}", key, value))
+                    .collect::<Vec<String>>()
+                    .join(", ")
+            )
+        };
+
+        let query = Query::from(table).map_sql(|table| {
+            format!(
+                "INSERT INTO {} ({}){} VALUES",
+                table, fields, settings_string
+            )
+        });
 
         let context = self.context.clone();
 

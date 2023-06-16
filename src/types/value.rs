@@ -395,7 +395,7 @@ impl From<Vec<String>> for Value {
     fn from(v: Vec<String>) -> Self {
         Value::Array(
             SqlType::String.into(),
-            Arc::new(v.into_iter().map(|s| s.into()).collect())
+            Arc::new(v.into_iter().map(|s| s.into()).collect()),
         )
     }
 }
@@ -575,11 +575,11 @@ mod test {
     use chrono_tz::Tz::{self, UTC};
     use std::fmt;
 
+    use crate::{row, Block};
     use rand::{
         distributions::{Distribution, Standard},
         random,
     };
-    use crate::{Block, row};
 
     fn test_into_t<T>(v: Value, x: &T)
     where
@@ -799,17 +799,19 @@ mod test {
     #[test]
     fn test_value_array_from() {
         let mut block = Block::with_capacity(5);
-        block.push(row! {
-            u16: vec![1_u16, 2, 3],
-            u32: vec![1_u32, 2, 3],
-            u64: vec![1_u64, 2, 3],
-            i8: vec![1_i8, 2, 3],
-            i16: vec![1_i16, 2, 3],
-            i32: vec![1_i32, 2, 3],
-            i64: vec![1_i64, 2, 3],
-            f32: vec![1_f32, 2.0, 3.0],
-            f64: vec![1_f64, 2.0, 3.0],
-        }).unwrap();
+        block
+            .push(row! {
+                u16: vec![1_u16, 2, 3],
+                u32: vec![1_u32, 2, 3],
+                u64: vec![1_u64, 2, 3],
+                i8: vec![1_i8, 2, 3],
+                i16: vec![1_i16, 2, 3],
+                i32: vec![1_i32, 2, 3],
+                i64: vec![1_i64, 2, 3],
+                f32: vec![1_f32, 2.0, 3.0],
+                f64: vec![1_f64, 2.0, 3.0],
+            })
+            .unwrap();
 
         assert_eq!(block.row_count(), 1);
         assert_eq!(block.column_count(), 9);
